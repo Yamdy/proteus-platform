@@ -16,4 +16,6 @@ export * from "./memory/types.js";
 export * from "./memory/in-memory-provider.js";
 export * from "./llm/provider.js";
 export * from "./tools/built-in.js";
+export * from "./config-snapshot-manager.js";
+export * from "./self-modify.js";
 export { sha256 } from "./utils/hash.js";
