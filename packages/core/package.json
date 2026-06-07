@@ -15,6 +15,7 @@
     "./harness": "./src/harness.ts",
     "./otel": "./src/otel/index.ts",
     "./memory": "./src/memory/index.ts",
+    "./tools": "./src/tools/built-in.ts",
     "./utils": "./src/utils/index.ts"
   },
   "scripts": {
