@@ -1,0 +1,18 @@
+// @proteus-ai/core — barrel export
+
+export * from "./types.js";
+export * from "./context.js";
+export * from "./handler-engine.js";
+export * from "./lifecycle.js";
+export * from "./checkpoint-store.js";
+export * from "./processors.js";
+export * from "./harness.js";
+export * from "./tool-registry.js";
+export * from "./prompt-fragment-registry.js";
+export * from "./session-manager.js";
+export * from "./schemas/index.js";
+export * from "./otel/index.js";
+export * from "./memory/types.js";
+export * from "./memory/in-memory-provider.js";
+export * from "./llm/provider.js";
+export { sha256 } from "./utils/hash.js";
