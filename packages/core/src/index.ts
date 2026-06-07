@@ -5,6 +5,7 @@ export * from "./context.js";
 export * from "./handler-engine.js";
 export * from "./lifecycle.js";
 export * from "./checkpoint-store.js";
+export * from "./sqlite-checkpoint-store.js";
 export * from "./processors.js";
 export * from "./harness.js";
 export * from "./tool-registry.js";

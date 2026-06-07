@@ -258,7 +258,7 @@ export class InMemoryThreadStore implements ThreadStore {
 
 // --- Factory: compose all in-memory stores into a CheckpointStore ---
 
-function bindMethods(instance: object): Record<string, unknown> {
+export function bindMethods(instance: object): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(instance))) {
     if (key === "constructor") continue;

@@ -185,16 +185,19 @@ export class Harness {
    */
   private async executePhases(ctx: HandlerContextClass, turnId: string, sessionId: string, agent: AgentContext): Promise<TurnResult> {
     const engine = agent.handlerEngine;
+    const DEBUG = process.env.PROTEUS_DEBUG === "1";
 
     await engine.emit("turn:start", { turnId, sessionId });
 
     for (const phaseName of PHASES) {
+      if (DEBUG) console.log(`[harness] phase: ${phaseName}`);
       const phasePayload = { phaseName, ...ctx };
 
       // 1. Interceptors get a chance to block
       const beforeResults = await engine.emit("phase:before", phasePayload);
       const blockResult = this.findBlock(beforeResults);
       if (blockResult) {
+        if (DEBUG) console.log(`[harness] phase ${phaseName} BLOCKED`);
         await engine.emit("turn:end", { turnId, sessionId, status: "aborted" });
         return { status: "aborted", turnId };
       }
@@ -210,12 +213,14 @@ export class Harness {
 
       const abortResult = this.findAbort(beforeResults);
       if (abortResult) {
+        if (DEBUG) console.log(`[harness] phase ${phaseName} ABORTED`);
         await engine.emit("turn:end", { turnId, sessionId, status: "aborted" });
         return { status: "aborted", turnId };
       }
 
       const errorResult = this.findTerminalError(beforeResults);
       if (errorResult) {
+        if (DEBUG) console.log(`[harness] phase ${phaseName} ERRORED: ${errorResult.error?.message}`);
         await engine.emit("turn:end", { turnId, sessionId, status: "errored" });
         return { status: "errored", turnId, error: errorResult.error };
       }
@@ -223,8 +228,22 @@ export class Harness {
       // 2. Processor runs independently (D5 key change)
       const processorResult = await this.runProcessor(phaseName, ctx);
       if (processorResult && "ok" in processorResult && !processorResult.ok) {
+        if (DEBUG) console.log(`[harness] processor ${phaseName} FAILED: ${(processorResult as any).reason}`);
         await engine.emit("turn:end", { turnId, sessionId, status: "errored" });
         return { status: "errored", turnId, error: new Error((processorResult as any).reason ?? "Processor failed") };
+      }
+
+      if (DEBUG) {
+        if (phaseName === "llm_inference") {
+          const tc = ctx.turn.toolCalls;
+          console.log(`[harness] llm_inference done: toolCalls=${tc ? tc.length : 0}`);
+        }
+        if (phaseName === "action_resolution") {
+          console.log(`[harness] action_resolution done: actions=${ctx.turn.actions ? ctx.turn.actions.length : 0}`);
+        }
+        if (phaseName === "tool_execution") {
+          console.log(`[harness] tool_execution done: results=${ctx.turn.toolResults ? ctx.turn.toolResults.length : 0}`);
+        }
       }
 
       // 3. Observers receive result

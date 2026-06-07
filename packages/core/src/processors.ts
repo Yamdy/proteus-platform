@@ -337,55 +337,9 @@ export interface RegisterProcessorsOptions extends ContextAssemblyOptions {
   executionEnv?: ToolRunner;
 }
 
-export function registerBuiltInProcessors(engine: HandlerEngine, opts?: RegisterProcessorsOptions): void {
-  const contextAssembly = new ContextAssemblyProcessor(opts);
-  const llmInference = new LLMInferenceProcessor({ onToken: opts?.onToken, onThinking: opts?.onThinking });
-  const actionResolution = new ActionResolutionProcessor();
-  const toolExecution = new ToolExecutionProcessor(opts?.executionEnv);
-  const resultObservation = new ResultObservationProcessor();
-
-  engine.register({
-    name: contextAssembly.name,
-    phases: ["context_assembly"],
-    events: ["phase:before"],
-    priority: 10,
-    trust: 3,
-    handle: (ctx) => contextAssembly.handle(ctx),
-  });
-
-  engine.register({
-    name: llmInference.name,
-    phases: ["llm_inference"],
-    events: ["phase:before"],
-    priority: 10,
-    trust: 3,
-    handle: (ctx) => llmInference.handle(ctx),
-  });
-
-  engine.register({
-    name: actionResolution.name,
-    phases: ["action_resolution"],
-    events: ["phase:before"],
-    priority: 10,
-    trust: 3,
-    handle: (ctx) => actionResolution.handle(ctx),
-  });
-
-  engine.register({
-    name: toolExecution.name,
-    phases: ["tool_execution"],
-    events: ["phase:before"],
-    priority: 10,
-    trust: 3,
-    handle: (ctx) => toolExecution.handle(ctx),
-  });
-
-  engine.register({
-    name: resultObservation.name,
-    phases: ["result_observation"],
-    events: ["phase:before"],
-    priority: 10,
-    trust: 3,
-    handle: (ctx) => resultObservation.handle(ctx),
-  });
+export function registerBuiltInProcessors(_engine: HandlerEngine, _opts?: RegisterProcessorsOptions): void {
+  // D5: Processors are called directly by the Harness via runProcessor(),
+  // NOT through HandlerEngine event handlers. Registering them as handlers
+  // would cause double execution (event handler + direct call).
+  // See harness.ts: "Processors are called independently by the Harness (not as handlers)"
 }

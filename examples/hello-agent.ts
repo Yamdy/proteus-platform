@@ -15,7 +15,11 @@ async function main() {
   }
 
   // 1. 创建 SDK 实例（接入 DeepSeek）
-  const llm = createDeepSeekProvider({ apiKey });
+  const llm = createDeepSeekProvider({
+    apiKey,
+    baseUrl: process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com/v1",
+    model: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
+  });
   const sdk = new ProteusSDK({ llm });
 
   // 2. 注册工具
@@ -26,7 +30,7 @@ async function main() {
   // 3. 创建会话
   sdk.createSession("demo", {
     sessionId: "demo",
-    llm: { provider: "deepseek", model: "deepseek-chat", temperature: 0 },
+    llm: { provider: "deepseek", model: process.env.DEEPSEEK_MODEL ?? "deepseek-chat", temperature: 0 },
     tools: { write_file: true, read_file: true, list_dir: true },
     logLevel: "info",
   });

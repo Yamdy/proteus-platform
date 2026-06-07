@@ -54,7 +54,17 @@ function mapMessages(messages: LLMMessage[]): OpenAIMessage[] {
   return messages.map((m) => {
     if (m.role === "system") return { role: "system", content: m.content };
     if (m.role === "user") return { role: "user", content: m.content };
-    if (m.role === "assistant") return { role: "assistant", content: m.content };
+    if (m.role === "assistant") {
+      const msg: OpenAIMessage = { role: "assistant", content: m.content };
+      if (m.toolCalls && m.toolCalls.length > 0) {
+        msg.tool_calls = m.toolCalls.map((tc) => ({
+          id: tc.id,
+          type: "function",
+          function: { name: tc.name, arguments: JSON.stringify(tc.arguments) },
+        }));
+      }
+      return msg;
+    }
     return { role: "tool", content: m.content, tool_call_id: m.toolCallId ?? "" };
   });
 }
@@ -176,7 +186,8 @@ export function createProtocol(config: OpenAIChatConfig): OpenAIChatProtocol {
 
     const decoder = new TextDecoder();
     let buffer = "";
-    const toolCalls: ToolCall[] = [];
+    // Accumulate tool_call argument fragments as raw strings; parse only on yield
+    const toolCallAccum: Array<{ id: string; name: string; argFragments: string }> = [];
     let finishReason: LLMResponse["finishReason"] = "stop";
     let usage = { promptTokens: 0, completionTokens: 0 };
 
@@ -206,12 +217,10 @@ export function createProtocol(config: OpenAIChatConfig): OpenAIChatProtocol {
           if (delta?.tool_calls) {
             for (const tc of delta.tool_calls) {
               if (tc.index !== undefined) {
-                if (!toolCalls[tc.index]) toolCalls[tc.index] = { id: "", name: "", arguments: {} };
-                if (tc.id) toolCalls[tc.index].id = tc.id;
-                if (tc.function?.name) toolCalls[tc.index].name = tc.function.name;
-                if (tc.function?.arguments) {
-                  try { toolCalls[tc.index].arguments = JSON.parse(tc.function.arguments); } catch { /* partial */ }
-                }
+                if (!toolCallAccum[tc.index]) toolCallAccum[tc.index] = { id: "", name: "", argFragments: "" };
+                if (tc.id) toolCallAccum[tc.index].id = tc.id;
+                if (tc.function?.name) toolCallAccum[tc.index].name = tc.function.name;
+                if (tc.function?.arguments) toolCallAccum[tc.index].argFragments += tc.function.arguments;
               }
             }
           }
@@ -223,7 +232,14 @@ export function createProtocol(config: OpenAIChatConfig): OpenAIChatProtocol {
       }
     }
 
-    if (toolCalls.length > 0) yield { content: "", toolCalls, usage, finishReason };
+    if (toolCallAccum.length > 0) {
+      const toolCalls: ToolCall[] = toolCallAccum.map((tc) => ({
+        id: tc.id,
+        name: tc.name,
+        arguments: (() => { try { return JSON.parse(tc.argFragments); } catch { return {}; } })(),
+      }));
+      yield { content: "", toolCalls, usage, finishReason };
+    }
     yield { content: "", usage, finishReason };
   }
 
