@@ -137,3 +137,41 @@ export interface SandboxHandle {
   /** Tear down the sandbox and release all resources. */
   destroy(): Promise<void>;
 }
+
+// --- Delegation ---
+
+export interface DelegationRequest {
+  fromAgentId: string;
+  toAgentId: string;
+  task: string;
+  context?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface DelegationResult {
+  ok: boolean;
+  result?: unknown;
+  error?: string;
+  duration: number;
+}
+
+// --- Cost Attribution ---
+
+export interface CostEntry {
+  agentId: string;
+  tokens: number;
+  cost: number;
+  parentAgentId?: string;
+}
+
+// --- SubHarness ---
+
+export type IsolationMode = "full" | "shared" | "summary";
+
+export interface SubHarnessOptions {
+  isolation: IsolationMode;
+  parentContext?: import("./context.js").SessionContext;
+  abortSignal?: AbortSignal;
+  costAttribution?: { parentSessionId: string };
+  costTracker?: import("./cost-tracker.js").CostAttributionTracker;
+}

@@ -6,6 +6,7 @@ interface SpanStack {
   chainSpan?: ProteusSpan;
   turnSpan?: ProteusSpan;
   phaseSpan?: ProteusSpan;
+  delegationSpan?: ProteusSpan;
   turnStartTime?: number;
 }
 
@@ -88,6 +89,81 @@ export class OTelBridgeHandler {
     }
   }
 
+  handleDelegationStart(p: {
+    fromAgentId: string;
+    toAgentId: string;
+    task: string;
+    sessionId?: string;
+    parentSpan?: ProteusSpan;
+  }): ProteusSpan {
+    const parent = p.parentSpan ?? this.findActiveSpan();
+    const span = this.tracer.startSpan("delegation", parent, {
+      "agent.id": p.fromAgentId,
+      "agent.name": p.fromAgentId,
+      "delegation.from": p.fromAgentId,
+      "delegation.to": p.toAgentId,
+      "delegation.task": p.task,
+    });
+
+    // Store as active delegation span for the target agent's session
+    if (p.sessionId) {
+      const s = this.getStack(p.sessionId);
+      s.delegationSpan = span;
+    }
+
+    this.metric.incrementCounter("proteus.delegation.total", 1, {
+      from: p.fromAgentId,
+      to: p.toAgentId,
+    });
+
+    return span;
+  }
+
+  handleDelegationEnd(p: {
+    fromAgentId: string;
+    toAgentId: string;
+    status: "ok" | "error";
+    error?: string;
+    sessionId?: string;
+    delegationSpan?: ProteusSpan;
+  }): void {
+    const span = p.delegationSpan
+      ?? (p.sessionId ? this.getStack(p.sessionId).delegationSpan : undefined)
+      ?? this.findActiveDelegationSpan();
+
+    if (span) {
+      span.setStatus(p.status, p.error);
+      if (p.error) span.setAttribute("error.message", p.error);
+      span.end();
+
+      // Clear from stack
+      if (p.sessionId) {
+        const s = this.getStack(p.sessionId);
+        if (s.delegationSpan === span) s.delegationSpan = undefined;
+      }
+    }
+
+    this.metric.incrementCounter("proteus.delegation.completed", 1, {
+      from: p.fromAgentId,
+      to: p.toAgentId,
+      status: p.status,
+    });
+  }
+
+  private findActiveSpan(): ProteusSpan | undefined {
+    for (const [, s] of this.stacks) {
+      if (s.phaseSpan) return s.phaseSpan;
+      if (s.turnSpan) return s.turnSpan;
+      if (s.chainSpan) return s.chainSpan;
+    }
+    return undefined;
+  }
+
+  private findActiveDelegationSpan(): ProteusSpan | undefined {
+    for (const [, s] of this.stacks) { if (s.delegationSpan) return s.delegationSpan; }
+    return undefined;
+  }
+
   private findActiveTurnStack(): SpanStack | undefined {
     for (const [, s] of this.stacks) { if (s.turnSpan) return s; }
     return undefined;
@@ -109,6 +185,8 @@ export function createOTelBridgeHandlers(tracer: ProteusTracer, metric: ProteusM
     mk("otel-bridge:turn-end", ["turn:end"], p => b.handleTurnEnd(p)),
     mk("otel-bridge:phase-before", ["phase:before"], p => b.handlePhaseBefore(p), PHASES),
     mk("otel-bridge:phase-after", ["phase:after"], p => b.handlePhaseAfter(p), PHASES),
+    mk("otel-bridge:delegation-start", ["delegation:start"], p => b.handleDelegationStart(p)),
+    mk("otel-bridge:delegation-end", ["delegation:end"], p => b.handleDelegationEnd(p)),
   ];
 }
 
