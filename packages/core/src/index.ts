@@ -15,6 +15,7 @@ export * from "./otel/index.js";
 export * from "./memory/types.js";
 export * from "./memory/in-memory-provider.js";
 export * from "./llm/provider.js";
+export * from "./llm/deepseek.js";
 export * from "./tools/built-in.js";
 export * from "./config-snapshot-manager.js";
 export * from "./self-modify.js";
