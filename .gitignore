@@ -10,3 +10,4 @@ data/
 *.db-wal
 .env
 .env.local
+.gitnexus/

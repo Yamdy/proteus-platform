@@ -175,3 +175,73 @@ export interface SubHarnessOptions {
   costAttribution?: { parentSessionId: string };
   costTracker?: import("./cost-tracker.js").CostAttributionTracker;
 }
+
+// --- Knowledge ---
+
+export interface KnowledgeEntry {
+  id: string;
+  key: string;
+  value: unknown;
+  tags: string[];
+  agentId?: string;
+  sessionId?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface KnowledgeQuery {
+  key?: string;
+  keyPrefix?: string;
+  tags?: string[];
+  agentId?: string;
+  limit?: number;
+}
+
+export interface KnowledgeStore {
+  put(entry: Omit<KnowledgeEntry, "id" | "createdAt" | "updatedAt">): KnowledgeEntry;
+  get(id: string): KnowledgeEntry | undefined;
+  query(q: KnowledgeQuery): KnowledgeEntry[];
+  delete(id: string): boolean;
+  update(id: string, patch: Partial<Pick<KnowledgeEntry, "value" | "tags">>): KnowledgeEntry | undefined;
+}
+
+// --- Governance ---
+
+export type GovernanceHookName = "H1" | "H2" | "H3" | "H4";
+
+export interface GovernanceDecision {
+  hook: GovernanceHookName;
+  action: "allow" | "deny" | "suspend";
+  reason: string;
+  agentId?: string;
+  toolName?: string;
+  timestamp: number;
+}
+
+export interface AuditLog {
+  log(decision: GovernanceDecision): void;
+  query(filter?: { hook?: GovernanceHookName; agentId?: string; action?: string }): GovernanceDecision[];
+}
+
+// --- MCP ---
+
+export interface McpToolInfo {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  serverName: string;
+}
+
+export interface McpServerInfo {
+  name: string;
+  version: string;
+  capabilities: { tools?: boolean };
+}
+
+export interface McpClientOptions {
+  serverName: string;
+  transport: "stdio" | "sse";
+  command?: string;
+  args?: string[];
+  url?: string;
+}

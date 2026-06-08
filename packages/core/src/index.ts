@@ -24,4 +24,7 @@ export * from "./self-modify.js";
 export * from "./agent-registry.js";
 export * from "./agent-router.js";
 export * from "./cost-tracker.js";
+export * from "./knowledge/index.js";
+export * from "./governance/index.js";
+export * from "./mcp/index.js";
 export { sha256 } from "./utils/hash.js";
