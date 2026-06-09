@@ -27,4 +27,6 @@ export * from "./cost-tracker.js";
 export * from "./knowledge/index.js";
 export * from "./governance/index.js";
 export * from "./mcp/index.js";
+export * from "./tenant/index.js";
+export * from "./manifest/index.js";
 export { sha256 } from "./utils/hash.js";

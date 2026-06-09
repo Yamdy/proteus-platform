@@ -24,7 +24,9 @@
     "@fastify/websocket": "^11.0.0",
     "@proteus-ai/core": "workspace:*",
     "better-sqlite3": "^11.0.0",
-    "fastify": "^5.2.0"
+    "dotenv": "^16.5.0",
+    "fastify": "^5.2.0",
+    "yaml": "^2.7.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",

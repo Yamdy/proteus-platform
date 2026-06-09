@@ -223,6 +223,43 @@ export interface AuditLog {
   query(filter?: { hook?: GovernanceHookName; agentId?: string; action?: string }): GovernanceDecision[];
 }
 
+// --- Tenant ---
+
+export interface TenantConfig {
+  tenantId: string;
+  name: string;
+  quotas?: TenantQuotas;
+  metadata?: Record<string, unknown>;
+}
+
+export interface TenantQuotas {
+  /** Max tokens per period (prompt + completion combined). */
+  maxTokensPerPeriod?: number;
+  /** Max requests per period. */
+  maxRequestsPerPeriod?: number;
+  /** Period duration in milliseconds (default: 1 hour). */
+  periodMs?: number;
+  /** Max concurrent sessions. */
+  maxConcurrentSessions?: number;
+  /** Max cost (in USD) per period. */
+  maxCostPerPeriod?: number;
+}
+
+export interface QuotaUsage {
+  tenantId: string;
+  tokensUsed: number;
+  requestsUsed: number;
+  costUsed: number;
+  periodStart: number;
+  periodEnd: number;
+}
+
+export interface QuotaCheckResult {
+  allowed: boolean;
+  reason?: string;
+  usage: QuotaUsage;
+}
+
 // --- MCP ---
 
 export interface McpToolInfo {

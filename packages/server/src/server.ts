@@ -13,6 +13,8 @@ import {
   HandlerEngine,
   registerBuiltins,
   registerBuiltInProcessors,
+  TenantRegistry,
+  QuotaManager,
 } from "@proteus-ai/core";
 import type {
   MetricsCollector,
@@ -29,6 +31,7 @@ import { sessionRoutes } from "./routes/sessions.js";
 import { registerMetricsRoutes } from "./routes/metrics.js";
 import { registerStatusRoutes, type StatusRouteDeps } from "./routes/status.js";
 import { registerChatRoutes } from "./routes/chat.js";
+import { registerTenantRoutes } from "./routes/tenants.js";
 import { registerWsRoutes, EventBus } from "./routes/ws.js";
 
 export interface ServerOptions {
@@ -57,6 +60,8 @@ export class ProteusServer {
   private readonly _sessionManager: SessionManager;
   private readonly _harness: Harness;
   private readonly _agent?: AgentContext;
+  private readonly _tenantRegistry: TenantRegistry;
+  private readonly _quotaManager: QuotaManager;
 
   constructor(options: ServerOptions = {}) {
     this.port = options.port ?? 3000;
@@ -77,6 +82,9 @@ export class ProteusServer {
       store: options.checkpointLog ?? new InMemoryCheckpointLog(),
     });
 
+    this._tenantRegistry = new TenantRegistry();
+    this._quotaManager = new QuotaManager();
+
     if (options.llm) {
       const engine = new HandlerEngine();
       registerBuiltins(engine);
@@ -93,6 +101,8 @@ export class ProteusServer {
 
   get sessionManager(): SessionManager { return this._sessionManager; }
   get harness(): Harness { return this._harness; }
+  get tenantRegistry(): TenantRegistry { return this._tenantRegistry; }
+  get quotaManager(): QuotaManager { return this._quotaManager; }
 
   private registerRoutes(options: ServerOptions): void {
     this.app.get("/health", async () => ({
@@ -135,6 +145,13 @@ export class ProteusServer {
         sessionStore: options.sessionStore,
         handlerCount: options.handlerCount,
       });
+
+      api.register(
+        (app) => registerTenantRoutes(app, {
+          tenantRegistry: this._tenantRegistry,
+          quotaManager: this._quotaManager,
+        }),
+      );
     }, { prefix: "/api" });
 
     const eventBus = options.eventBus ?? new EventBus(options.eventLog);

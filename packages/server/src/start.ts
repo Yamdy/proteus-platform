@@ -1,5 +1,6 @@
 // @proteus-ai/server — Standalone entry point
 
+import "dotenv/config";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { createInMemoryStore, createSqliteStore, createProvider, MetricsCollector } from "@proteus-ai/core";

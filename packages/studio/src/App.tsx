@@ -1,5 +1,7 @@
 import SessionSidebar from "./components/chat/SessionSidebar";
 import ChatArea from "./components/chat/ChatArea";
+import AgentPanel from "./components/agents/AgentPanel";
+import TraceTree from "./components/agents/TraceTree";
 
 export default function App() {
   return (
@@ -11,7 +13,7 @@ export default function App() {
         <div className="absolute bottom-[10%] left-[40%] h-[40vh] w-[40vh] rounded-full bg-purple-500/[0.02] blur-[90px]" />
       </div>
 
-      {/* Sidebar with brand */}
+      {/* Sidebar: brand + sessions + agents */}
       <div className="relative z-20 flex flex-col">
         {/* Brand header */}
         <div className="glass-panel-strong border-b border-white/[0.04] px-5 py-5">
@@ -25,11 +27,20 @@ export default function App() {
           </div>
         </div>
         <SessionSidebar />
+        <AgentPanel />
       </div>
 
-      {/* Main chat area */}
-      <main className="relative z-10 flex-1 overflow-auto">
-        <ChatArea />
+      {/* Main area: chat + trace */}
+      <main className="relative z-10 flex flex-1 overflow-hidden">
+        {/* Chat area */}
+        <div className="flex-1 overflow-auto">
+          <ChatArea />
+        </div>
+
+        {/* Trace panel (right side) */}
+        <div className="w-80 border-l border-white/[0.04] overflow-auto glass-panel-strong">
+          <TraceTree />
+        </div>
       </main>
     </div>
   );
