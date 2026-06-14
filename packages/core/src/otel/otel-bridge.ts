@@ -67,24 +67,54 @@ export class OTelBridgeHandler {
     }
   }
 
-  handlePhaseBefore(p: { phaseName: PhaseName; session?: { sessionId: string }; turn?: { turnId: string } }): void {
+  handlePhaseBefore(p: { phaseName: PhaseName; session?: { sessionId: string }; turn?: { turnId: string }; payload?: Record<string, unknown> }): void {
     if (!p.session?.sessionId) return;
     const s = this.getStack(p.session.sessionId);
     s.phaseSpan = this.tracer.startSpan(`phase:${p.phaseName}`, s.turnSpan ?? s.chainSpan, {
       "phase.name": p.phaseName,
       ...(p.turn?.turnId ? { "turn.id": p.turn.turnId } : {}),
     });
+
+    if (p.phaseName === "context_assembly" && p.payload?.systemPrompt != null) {
+      const prompt = String(p.payload.systemPrompt);
+      s.phaseSpan.setAttribute("context.system_prompt", prompt.length > 2000 ? prompt.slice(0, 2000) : prompt);
+    }
   }
 
-  handlePhaseAfter(p: { phaseName: PhaseName; session?: { sessionId: string }; turn?: { turnId: string } }): void {
+  handlePhaseAfter(p: { phaseName: PhaseName; session?: { sessionId: string }; turn?: { turnId: string }; payload?: Record<string, unknown> }): void {
     if (!p.session?.sessionId) return;
     const s = this.getStack(p.session.sessionId);
     if (s.phaseSpan) {
-      s.phaseSpan.setStatus("ok");
-      s.phaseSpan.end();
+      // Set phase-specific attributes before ending
+      if (p.phaseName === "tool_execution" && Array.isArray(p.payload?.toolCalls)) {
+        const calls = p.payload.toolCalls as Array<{ name?: string; input?: unknown; output?: unknown; success?: boolean }>;
+        s.phaseSpan.setAttribute("tool.calls_count", calls.length);
+        for (let i = 0; i < calls.length; i++) {
+          const tc = calls[i];
+          if (tc.name != null) s.phaseSpan.setAttribute(`tool.${i}.name`, String(tc.name));
+          if (tc.input != null) {
+            const json = JSON.stringify(tc.input);
+            s.phaseSpan.setAttribute(`tool.${i}.input`, json.length > 1000 ? json.slice(0, 1000) : json);
+          }
+          if (tc.output != null) {
+            const json = JSON.stringify(tc.output);
+            s.phaseSpan.setAttribute(`tool.${i}.output`, json.length > 1000 ? json.slice(0, 1000) : json);
+          }
+          if (tc.success != null) s.phaseSpan.setAttribute(`tool.${i}.success`, tc.success);
+        }
+      }
+
       if (p.phaseName === "llm_inference") {
+        if (p.payload?.usage != null && typeof p.payload.usage === "object") {
+          const usage = p.payload.usage as Record<string, unknown>;
+          if (usage.input_tokens != null) s.phaseSpan.setAttribute("llm.input_tokens", Number(usage.input_tokens));
+          if (usage.output_tokens != null) s.phaseSpan.setAttribute("llm.output_tokens", Number(usage.output_tokens));
+        }
         this.metric.recordHistogram("proteus.llm.latency", Date.now() - s.phaseSpan.startTime);
       }
+
+      s.phaseSpan.setStatus("ok");
+      s.phaseSpan.end();
       s.phaseSpan = undefined;
     }
   }

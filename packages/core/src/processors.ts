@@ -51,12 +51,14 @@ function estimateMessageTokens(messages: LLMMessage[]): number {
 export interface ContextAssemblyOptions {
   maxTokens?: number;
   systemPrompt?: string;
+  keepRecentTurns?: number;  // how many recent messages to keep uncompacted (default 6)
 }
 
 export class ContextAssemblyProcessor {
   readonly name = "context_assembly";
   private readonly maxTokens: number;
   private readonly systemPrompt: string;
+  private readonly keepRecentTurns: number;
   private _lastPrefixHash: string | null = null;
   private _cachedSystemContent: string | null = null;
   private _chainStarted = false;
@@ -64,6 +66,7 @@ export class ContextAssemblyProcessor {
   constructor(opts?: ContextAssemblyOptions) {
     this.maxTokens = opts?.maxTokens ?? 4000;
     this.systemPrompt = opts?.systemPrompt ?? "";
+    this.keepRecentTurns = opts?.keepRecentTurns ?? 6;
   }
 
   /** Hash of the system-message prefix from the most recent handle() call. */
@@ -119,6 +122,28 @@ export class ContextAssemblyProcessor {
     const userFragments = ctx.turn.promptFragments.filter((f) => f.role === "user");
     for (const f of userFragments) {
       messages.push({ role: "user", content: f.content });
+    }
+
+    // Compaction: if total tokens exceed budget, compact middle messages
+    {
+      const totalTokens = estimateMessageTokens(messages);
+      if (totalTokens > this.maxTokens) {
+        const systemCount = messages.length > 0 && messages[0].role === "system" ? 1 : 0;
+        const keepRecent = Math.min(this.keepRecentTurns, messages.length - systemCount);
+        const compactEnd = messages.length - keepRecent; // exclusive index
+
+        for (let i = systemCount; i < compactEnd; i++) {
+          const original = messages[i];
+          const charCount = original.content.length;
+          messages[i] = {
+            ...original,
+            content: `[compacted: ${charCount} chars]`,
+            // Clear tool-specific fields that no longer apply after compaction
+            toolCalls: undefined,
+            toolCallId: undefined,
+          };
+        }
+      }
     }
 
     // KV-cache prefix stability detection

@@ -1,7 +1,8 @@
 import SessionSidebar from "./components/chat/SessionSidebar";
 import ChatArea from "./components/chat/ChatArea";
 import AgentPanel from "./components/agents/AgentPanel";
-import TraceTree from "./components/agents/TraceTree";
+import { TraceTimeline } from "./components/observability/TraceTimeline";
+import KpiGridPage from "./components/observability/KpiGridPage";
 
 export default function App() {
   return (
@@ -13,8 +14,8 @@ export default function App() {
         <div className="absolute bottom-[10%] left-[40%] h-[40vh] w-[40vh] rounded-full bg-purple-500/[0.02] blur-[90px]" />
       </div>
 
-      {/* Sidebar: brand + sessions + agents */}
-      <div className="relative z-20 flex flex-col">
+      {/* Left column: brand + sessions + agents */}
+      <div className="relative z-20 flex w-64 flex-col border-r border-white/[0.04]">
         {/* Brand header */}
         <div className="glass-panel-strong border-b border-white/[0.04] px-5 py-5">
           <div className="flex items-baseline gap-2">
@@ -30,18 +31,18 @@ export default function App() {
         <AgentPanel />
       </div>
 
-      {/* Main area: chat + trace */}
-      <main className="relative z-10 flex flex-1 overflow-hidden">
-        {/* Chat area */}
-        <div className="flex-1 overflow-auto">
-          <ChatArea />
-        </div>
+      {/* Center column: chat area */}
+      <div className="relative z-10 flex-1 overflow-auto">
+        <ChatArea />
+      </div>
 
-        {/* Trace panel (right side) */}
-        <div className="w-80 border-l border-white/[0.04] overflow-auto glass-panel-strong">
-          <TraceTree />
+      {/* Right column: observability */}
+      <div className="relative z-10 flex w-[35%] min-w-[320px] flex-col overflow-hidden border-l border-white/[0.04]">
+        <div className="glass-panel-strong flex-1 overflow-auto p-4">
+          <TraceTimeline spans={[]} />
+          <KpiGridPage />
         </div>
-      </main>
+      </div>
     </div>
   );
 }

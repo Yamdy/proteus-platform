@@ -34,6 +34,7 @@ interface OpenAIResponse {
       role: string;
       content: string | null;
       reasoning_content?: string | null;
+      thinking?: string | null;
       tool_calls?: Array<{
         id: string;
         type: "function";
@@ -152,7 +153,7 @@ export function createProtocol(config: OpenAIChatConfig): OpenAIChatProtocol {
 
     const result: LLMResponse = {
       content: message?.content ?? "",
-      thinking: message?.reasoning_content ?? undefined,
+      thinking: message?.reasoning_content ?? message?.thinking ?? undefined,
       toolCalls: mapToolCalls(message?.tool_calls ?? []),
       usage: {
         promptTokens: data.usage?.prompt_tokens ?? 0,
@@ -210,6 +211,9 @@ export function createProtocol(config: OpenAIChatConfig): OpenAIChatProtocol {
 
           if (delta?.reasoning_content) {
             yield { content: "", thinking: delta.reasoning_content, usage: { promptTokens: 0, completionTokens: 0 }, finishReason: "stop" };
+          }
+          if (delta?.thinking) {
+            yield { content: "", thinking: delta.thinking, usage: { promptTokens: 0, completionTokens: 0 }, finishReason: "stop" };
           }
           if (delta?.content) {
             yield { content: delta.content, usage: { promptTokens: 0, completionTokens: 0 }, finishReason: "stop" };

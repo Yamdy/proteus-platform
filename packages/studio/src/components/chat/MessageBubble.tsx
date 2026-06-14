@@ -1,4 +1,7 @@
 import type { Message } from "../../stores/sessionStore";
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import "highlight.js/styles/github-dark.css";
 
 interface MessageBubbleProps {
   message: Message;
@@ -43,10 +46,30 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           )}
         </div>
 
+        {/* Thinking fold (assistant messages with reasoning) */}
+        {!isUser && message.reasoning && (
+          <details className="mb-2 group">
+            <summary className="cursor-pointer text-xs text-cyan-400/70 hover:text-cyan-300 select-none">
+              Thinking ({message.reasoning.length} chars)
+            </summary>
+            <div className="mt-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-xs text-gray-400 leading-relaxed whitespace-pre-wrap">
+              {message.reasoning}
+            </div>
+          </details>
+        )}
+
         {/* Content */}
-        <p className="whitespace-pre-wrap text-sm leading-relaxed">
-          {message.content}
-        </p>
+        {isUser ? (
+          <p className="whitespace-pre-wrap text-sm leading-relaxed">
+            {message.content}
+          </p>
+        ) : (
+          <div className="prose prose-invert prose-sm max-w-none">
+            <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
+              {message.content}
+            </ReactMarkdown>
+          </div>
+        )}
       </div>
     </div>
   );

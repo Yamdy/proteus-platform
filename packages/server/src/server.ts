@@ -33,6 +33,7 @@ import { registerStatusRoutes, type StatusRouteDeps } from "./routes/status.js";
 import { registerChatRoutes } from "./routes/chat.js";
 import { registerTenantRoutes } from "./routes/tenants.js";
 import { registerWsRoutes, EventBus } from "./routes/ws.js";
+import { registerEventsRoutes } from "./routes/events.js";
 
 export interface ServerOptions {
   port?: number;
@@ -144,6 +145,10 @@ export class ProteusServer {
         eventLog: options.eventLog,
         sessionStore: options.sessionStore,
         handlerCount: options.handlerCount,
+      });
+
+      api.register(registerEventsRoutes, {
+        eventLog: options.eventLog,
       });
 
       api.register(

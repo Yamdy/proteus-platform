@@ -7,12 +7,18 @@ export const SpanRecordSchema = z.object({
   spanId: z.string(),
   parentSpanId: z.string().optional(),
   name: z.string(),
-  status: z.enum(["ok", "error", "running"]),
+  type: z.string(),
+  status: z.enum(["running", "success", "error"]),
   startTime: z.number(),
   endTime: z.number().optional(),
+  input: z.unknown().optional(),
+  output: z.unknown().optional(),
+  metadata: z.record(z.unknown()).optional(),
   attributes: z.record(z.unknown()).optional(),
 });
 export type InferredSpanRecord = z.infer<typeof SpanRecordSchema>;
+/** Alias for backward compatibility with Studio lib imports. */
+export type SpanRecord = InferredSpanRecord;
 
 export const TraceSummarySchema = z.object({
   traceId: z.string(),

@@ -13,6 +13,7 @@ export interface Message {
   content: string;
   timestamp: number;
   streaming?: boolean;
+  reasoning?: string;
 }
 
 interface SessionState {

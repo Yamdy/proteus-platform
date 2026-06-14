@@ -16,6 +16,15 @@ export const SessionLLMConfigSchema = z.object({
 
 export type SessionLLMConfig = z.infer<typeof SessionLLMConfigSchema>;
 
+// --- CompactionConfig ---
+
+export const CompactionConfigSchema = z.object({
+  keepRecentTurns: z.number().min(1).max(50).default(6),
+  enabled: z.boolean().default(true),
+});
+
+export type CompactionConfig = z.infer<typeof CompactionConfigSchema>;
+
 // --- SessionConfig ---
 
 export const SessionConfigSchema = z.object({
@@ -26,6 +35,7 @@ export const SessionConfigSchema = z.object({
   name: z.string().optional(),
   createdAt: z.number().optional(),
   memory: MemoryConfigSchema.optional(),
+  compaction: CompactionConfigSchema.optional(),
 });
 
 export type SessionConfigInferred = z.infer<typeof SessionConfigSchema>;
